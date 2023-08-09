@@ -12,7 +12,7 @@ data = response.json()
 job_list = data["data"]
 career_page_urls = []
 
-contador_empresas = 0
+
 
 
 
@@ -27,7 +27,7 @@ for item in job_list:
 
 
 lista_vagas= []
-print(f"Já catalogamos todas as empresas. Ao todo temos {len(career_page_urls)} empresas")
+print(f"Já catalogamos todas as empresas. Ao todo temos {len(career_page_urls) + 1} empresas")
 print("Agora vamos catalogar cada vaga das empresas listadas para você")
 
 for empresa in career_page_urls:
@@ -41,6 +41,8 @@ for empresa in career_page_urls:
 
     vagas = site.findAll("li", attrs={"class": "sc-cc6aad61-3 iBlSMP"})
 
+
+def corpoDaVaga(vagas):
     for vaga in vagas:
 
         corpo_da_vaga = vaga.find("div", attrs={"class": "sc-cc6aad61-4 fFfOku"})
@@ -51,13 +53,18 @@ for empresa in career_page_urls:
         localizacao_tag = vaga.find("div", attrs={"class": "sc-cc6aad61-6 bhyeAN"})
 
         if corpo_titulo_vaga:
-            contador_empresas += 1
+
             nome_vaga = corpo_titulo_vaga.text
             localizacao = localizacao_tag.text
             link_vaga = f'{empresa}{link_tag["href"]}'
 
+
+
             lista_vagas.append([nome_vaga,titulo_pagina,localizacao,link_vaga])
 
+
+
+corpoDaVaga(vagas)
 
 
 
@@ -72,5 +79,5 @@ print("Estamos adicionando as vagas ao seu arquivo vagas.xlsx")
 todas_as_vagas.to_excel("vagas.xlsx",index=False)
 
 
-print("Foram contabilizado" ,contador_empresas,"Empresas")
+print("Foram contabilizada" ,len(lista_vagas)+1,"vagas")
 print("Todas elas já foram adicionadas ao seu arquivo vagas.xlsx")
