@@ -7,7 +7,8 @@
 
 Esté repositório tem como finalidade de raspagem de dados de vagas de emprego no site da [Gupy.io](https://portal.gupy.io/) . Ao digitar o termo que deseja, a aplicação irá buscar
 por vagas naquela área. Em um segundo momento a aplicação irá registrar todas as vagas de cada empresa cujo termo foi estabelecido
-e cada vag que houver, será registrado em um arquivo excel
+e cada vaga que houver, será registrado em um arquivo excel. 
+No arquivo Excel, terá as colunas de : Título,Empresa,Localização,Link da Vaga e Descrição da Vaga
 
 ### Pré-requisitos
 
