@@ -89,7 +89,7 @@ def scraping_jobs(find_job, excel_file="jobs.xlsx"):
         company_jobs = body_job(jobs, company)
         all_jobs.extend(company_jobs)
 
-    all_companies_saved = pd.DataFrame(all_jobs, columns=["Título", "Empresa", "Localização", "Link Da job","Descrição Vaga"])
+    all_companies_saved = pd.DataFrame(all_jobs, columns=["Título", "Empresa", "Localização", "Link Da Vaga","Descrição Vaga"])
 
     try:
         companys_registradas = pd.read_excel(excel_file)
