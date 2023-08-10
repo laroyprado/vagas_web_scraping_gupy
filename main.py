@@ -13,35 +13,6 @@ job_list = data["data"]
 career_page_urls = []
 
 
-
-
-
-
-for item in job_list:
-
-    empresa_site = item["careerPageUrl"].split('/')
-
-    if len(empresa_site) >= 3:
-        base_url = '/'.join(empresa_site[:3])
-        career_page_urls.append(base_url)
-
-
-lista_vagas= []
-print(f"Já catalogamos todas as empresas. Ao todo temos {len(career_page_urls) + 1} empresas")
-print("Agora vamos catalogar cada vaga das empresas listadas para você")
-
-for empresa in career_page_urls:
-    response = requests.get(empresa)
-
-
-
-    content = response.content
-    site = BeautifulSoup(content, "html.parser")
-    titulo_pagina = site.title.text
-
-    vagas = site.findAll("li", attrs={"class": "sc-cc6aad61-3 iBlSMP"})
-
-
 def corpoDaVaga(vagas):
     for vaga in vagas:
 
@@ -64,7 +35,38 @@ def corpoDaVaga(vagas):
 
 
 
-corpoDaVaga(vagas)
+
+for item in job_list:
+
+    empresa_site = item["careerPageUrl"].split('/')
+
+    if len(empresa_site) >= 3:
+        base_url = '/'.join(empresa_site[:3])
+        career_page_urls.append(base_url)
+
+
+
+lista_vagas= []
+print(f"Já catalogamos todas as empresas. Ao todo temos {len(career_page_urls) + 1} empresas")
+print("Agora vamos catalogar cada vaga das empresas listadas para você")
+
+for empresa in career_page_urls:
+    response = requests.get(empresa)
+
+
+
+    content = response.content
+    site = BeautifulSoup(content, "html.parser")
+    titulo_pagina = site.title.text
+
+    vagas = site.findAll("li", attrs={"class": "sc-cc6aad61-3 iBlSMP"})
+    corpoDaVaga(vagas)
+
+
+
+
+
+
 
 
 
@@ -78,6 +80,7 @@ todas_as_vagas = pd.concat([empresas_registradas, todas_as_vagas])
 print("Estamos adicionando as vagas ao seu arquivo vagas.xlsx")
 todas_as_vagas.to_excel("vagas.xlsx",index=False)
 
+print(lista_vagas)
 
 print("Foram contabilizada" ,len(lista_vagas)+1,"vagas")
 print("Todas elas já foram adicionadas ao seu arquivo vagas.xlsx")
