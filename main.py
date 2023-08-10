@@ -2,85 +2,107 @@ import requests
 from bs4 import BeautifulSoup
 import pandas as pd
 
-encontre_vaga = input("Qual área deseja?")
-titulo_pesquisa = encontre_vaga.replace(" ","%20")
-url = f"https://portal.api.gupy.io/api/v1/jobs/companies?jobName={titulo_pesquisa}&limit=1000"
 
-response = requests.get(url)
-data = response.json()
+def scraping_jobs(find_job, excel_file="jobs.xlsx"):
+    title_search = find_job.replace(" ", "%20")
+    url = f"https://portal.api.gupy.io/api/v1/jobs/companies?jobName={title_search}&limit=1000"
 
-job_list = data["data"]
-career_page_urls = []
+    response = requests.get(url)
+    data = response.json()
 
+    job_list = data["data"]
+    career_page_urls = []
 
-def corpoDaVaga(vagas):
-    for vaga in vagas:
+    def body_job(jobs, company):
+        job_list = []
+        for job in jobs:
+            body_of_job = job.find("div", attrs={"class": "sc-cc6aad61-4 fFfOku"})
+            body_title_job = body_of_job.find("div", attrs={"class": "sc-cc6aad61-5 PaHqX"})
 
-        corpo_da_vaga = vaga.find("div", attrs={"class": "sc-cc6aad61-4 fFfOku"})
-        corpo_titulo_vaga = corpo_da_vaga.find("div", attrs={"class": "sc-cc6aad61-5 PaHqX"})
+            link_tag = job.find("a", attrs={"data-testid": "job-list__listitem-href"})
+            location_tag = job.find("div", attrs={"class": "sc-cc6aad61-6 bhyeAN"})
 
-        link_tag = vaga.find("a", attrs={"data-testid": "job-list__listitem-href"})
-
-        localizacao_tag = vaga.find("div", attrs={"class": "sc-cc6aad61-6 bhyeAN"})
-
-        if corpo_titulo_vaga:
-
-            nome_vaga = corpo_titulo_vaga.text
-            localizacao = localizacao_tag.text
-            link_vaga = f'{empresa}{link_tag["href"]}'
+            if body_title_job:
+                job_name = body_title_job.text
+                location = location_tag.text
+                link_job = f'{company}{link_tag["href"]}'
 
 
+                response = requests.get(link_job)
+                content = response.content
+                site = BeautifulSoup(content, "html.parser")
 
-            lista_vagas.append([nome_vaga,titulo_pagina,localizacao,link_vaga])
+                description_div = site.find("div",
+                                            attrs={"data-testid": "text-section", "class": "sc-2fba68cb-1 HAGHS"})
+                paragraphs = description_div.find_all("p")
 
-
-
-
-for item in job_list:
-
-    empresa_site = item["careerPageUrl"].split('/')
-
-    if len(empresa_site) >= 3:
-        base_url = '/'.join(empresa_site[:3])
-        career_page_urls.append(base_url)
+                description = ""
+                for paragraph in paragraphs:
+                    description += paragraph.text
 
 
+                job_list.append([job_name, page_title, location, link_job,description])
+            else:
+                job_name = job.text
+                location = location_tag.text
+                link_job = f'{company}{link_tag["href"]}'
 
-lista_vagas= []
-print(f"Já catalogamos todas as empresas. Ao todo temos {len(career_page_urls) + 1} empresas")
-print("Agora vamos catalogar cada vaga das empresas listadas para você")
+                response = requests.get(link_job)
+                content = response.content
+                site = BeautifulSoup(content, "html.parser")
 
-for empresa in career_page_urls:
-    response = requests.get(empresa)
+                description_div = site.find("div",
+                                            attrs={"data-testid": "text-section", "class": "sc-2fba68cb-1 HAGHS"})
+                paragraphs = description_div.find_all("p")
 
+                description = ""
+                for paragraph in paragraphs:
+                    description += paragraph.text
 
-
-    content = response.content
-    site = BeautifulSoup(content, "html.parser")
-    titulo_pagina = site.title.text
-
-    vagas = site.findAll("li", attrs={"class": "sc-cc6aad61-3 iBlSMP"})
-    corpoDaVaga(vagas)
-
+                job_list.append([job_name, page_title, location, link_job,description])
 
 
 
+        return job_list
+
+    for item in job_list:
+        company_website = item["careerPageUrl"].split('/')
+        if len(company_website) >= 3:
+            base_url = '/'.join(company_website[:3])
+            career_page_urls.append(base_url)
+
+    all_jobs = []
+    print(f"Já catalogamos todas as empresas. Ao todo temos {len(career_page_urls) + 1} empresas")
+
+    for company in career_page_urls:
+        response = requests.get(company)
+        content = response.content
+        site = BeautifulSoup(content, "html.parser")
+        page_title = site.title.text
+        jobs_ul = site.find_all("ul", attrs={"data-testid": "job-list__list"})
+        jobs = []
+        for job in jobs_ul:
+            li_of_job = job.find_all("li", attrs={"class": "sc-cc6aad61-3 iBlSMP"})
+            for info in li_of_job:
+                jobs.append(info)
+
+        company_jobs = body_job(jobs, company)
+        all_jobs.extend(company_jobs)
+
+    all_companies_saved = pd.DataFrame(all_jobs, columns=["Título", "Empresa", "Localização", "Link Da job","Descrição Vaga"])
+
+    try:
+        companys_registradas = pd.read_excel(excel_file)
+        all_companies_saved = pd.concat([companys_registradas, all_companies_saved])
+    except FileNotFoundError:
+        pass
+
+    all_companies_saved.to_excel(excel_file, index=False)
+
+    print(f"Foram contabilizadas {len(all_jobs)} vagas de emprego.")
+    print("Todas elas já foram adicionadas ao arquivo", excel_file)
 
 
 
-
-
-
-todas_as_vagas = pd.DataFrame(lista_vagas,columns=["Título","Empresa","Localização","Link Da Vaga"])
-
-
-empresas_registradas = pd.read_excel("vagas.xlsx")
-todas_as_vagas = pd.concat([empresas_registradas, todas_as_vagas])
-
-print("Estamos adicionando as vagas ao seu arquivo vagas.xlsx")
-todas_as_vagas.to_excel("vagas.xlsx",index=False)
-
-print(lista_vagas)
-
-print("Foram contabilizada" ,len(lista_vagas)+1,"vagas")
-print("Todas elas já foram adicionadas ao seu arquivo vagas.xlsx")
+find_job = input("Qual área deseja?")
+scraping_jobs(find_job)
